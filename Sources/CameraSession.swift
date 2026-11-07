@@ -10,27 +10,33 @@ final class CameraSession {
     var zoom: Double = 1.0
 
     private let client: CameraClient
-    private let stream: CameraStream
+    private let video: VideoStream
+    private let mic: AudioStream
     private let audio = AudioEngine()
     private var talkConn: NWConnection?
+    private var talking = false
     private var lastCmd: [String: Date] = [:]
 
     init(camera: CameraDevice) {
         self.camera = camera
         self.client = CameraClient(device: camera)
-        self.stream = CameraStream(device: camera)
-        stream.onFrame = { [weak self] img in self?.frame = img }
-        stream.onAudio = { [weak self] pcm in self?.audio.feed(pcm16: pcm) }
+        self.video = VideoStream(device: camera)
+        self.mic = AudioStream(device: camera)
+        video.onFrame = { [weak self] img in self?.frame = img }
+        mic.onAudio = { [weak self] pcm in self?.audio.feed(pcm16: pcm) }
     }
 
     func start() {
         audio.start()
         Task { try? await client.command("audio_out0") }
-        stream.start()
+        video.start()
+        mic.start()
     }
 
     func stop() {
-        stream.stop()
+        endTalk()
+        video.stop()
+        mic.stop()
         audio.stop()
         Task { try? await client.command("audio_out1") }
     }
@@ -46,7 +52,8 @@ final class CameraSession {
 
     func nudge(pan: CGFloat, tilt: CGFloat) {
         if abs(pan) > 0.2 { cmd(pan > 0 ? "move_right0.1" : "move_left0.1") }
-        if abs(tilt) > 0.2 { cmd(tilt > 0 ? "move_backward0.1" : "move_forward0.1") }
+        // Joystick up => move_backward; down => move_forward
+        if abs(tilt) > 0.2 { cmd(tilt < 0 ? "move_backward0.1" : "move_forward0.1") }
     }
 
     func stopMove() {
@@ -57,21 +64,26 @@ final class CameraSession {
     // MARK: Push-to-talk (device mic -> camera speaker)
 
     func beginTalk() {
+        guard !talking, audio.engineNode.isRunning else { return }
+        talking = true
         Task { try? await client.command("audio_out1") }
         let conn = NWConnection(host: NWEndpoint.Host(camera.host), port: 51108, using: .tcp)
         conn.stateUpdateHandler = { _ in }
         conn.start(queue: .global())
         talkConn = conn
         audio.engineNode.inputNode.removeTap(onBus: 0)
-        let inFmt = audio.engineNode.inputNode.outputFormat(forBus: 0)
-        let step = max(1, Int(inFmt.sampleRate / 8000))
-        audio.engineNode.inputNode.installTap(onBus: 0, bufferSize: 2048, format: inFmt) { buf, _ in
-            guard let ch = buf.floatChannelData?[0] else { return }
+        audio.engineNode.inputNode.installTap(onBus: 0, bufferSize: 2048, format: nil) { buf, _ in
+            guard let channels = buf.floatChannelData else { return }
             let frames = Int(buf.frameLength)
+            let nch = Int(buf.format?.channelCount ?? 1)
+            let sr = buf.format?.sampleRate ?? 48000
+            let step = max(1, Int(sr / 8000))
             var pcm = Data(capacity: frames / step * 2)
             var i = 0
             while i < frames {
-                let v = Int16(max(-1, min(1, ch[i])) * 32767)
+                var acc: Float = 0
+                for c in 0..<nch { acc += channels[c][i] / Float(nch) }
+                let v = Int16(max(-1, min(1, acc)) * 32767)
                 withUnsafeBytes(of: v.littleEndian) { pcm.append(contentsOf: $0) }
                 i += step
             }
@@ -82,6 +94,8 @@ final class CameraSession {
     }
 
     func endTalk() {
+        guard talking else { return }
+        talking = false
         audio.engineNode.inputNode.removeTap(onBus: 0)
         talkConn?.cancel()
         talkConn = nil
