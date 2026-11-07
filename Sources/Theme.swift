@@ -23,6 +23,6 @@ extension View {
 
 extension CGFloat {
     func clamped(_ r: ClosedRange<CGFloat>) -> CGFloat {
-        min(max(self, r.lowerBound), r.upperBound)
+        Swift.min(Swift.max(self, r.lowerBound), r.upperBound)
     }
 }

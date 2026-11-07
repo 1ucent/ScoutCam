@@ -34,7 +34,6 @@ targets:
         NSBonjourServices:
           - _http._tcp
         UILaunchScreen: {}
-        UIRequiresFullScreen: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
 schemes:
