@@ -75,8 +75,8 @@ final class CameraSession {
         audio.engineNode.inputNode.installTap(onBus: 0, bufferSize: 2048, format: nil) { buf, _ in
             guard let channels = buf.floatChannelData else { return }
             let frames = Int(buf.frameLength)
-            let nch = Int(buf.format?.channelCount ?? 1)
-            let sr = buf.format?.sampleRate ?? 48000
+            let nch = Int(buf.format.channelCount)
+            let sr = buf.format.sampleRate
             let step = max(1, Int(sr / 8000))
             var pcm = Data(capacity: frames / step * 2)
             var i = 0
