@@ -36,6 +36,15 @@ jobs:
           zip -qry ScoutCam.ipa Payload
           ls -la ScoutCam.ipa
 
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create nightly ScoutCam.ipa \
+            --title "ScoutCam IPA (auto-build)" \
+            --notes "Unsigned IPA built by GitHub Actions. Install with AltStore/Sideloadly." \
+            --target main --clobber
+
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
