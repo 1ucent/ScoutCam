@@ -14,9 +14,9 @@ extension View {
     @ViewBuilder
     func glassCard() -> some View {
         if #available(iOS 26.0, *) {
-            self.glassEffect()
+            self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         } else {
-            self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 }
