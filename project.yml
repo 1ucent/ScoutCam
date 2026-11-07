@@ -1,0 +1,48 @@
+name: ScoutCam
+options:
+  bundleIdPrefix: com.scoutcam
+  deploymentTarget:
+    iOS: "26.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  ScoutCam:
+    type: application
+    platform: iOS
+    deploymentTarget: "26.0"
+    sources:
+      - Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.scoutcam.app
+        TARGETED_DEVICE_FAMILY: "1"
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGNING_ALLOWED: "NO"
+        CODE_SIGNING_REQUIRED: "NO"
+        CODE_SIGN_IDENTITY: ""
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        SUPPORTS_MACCATALYST: NO
+    info:
+      path: ScoutCam/Info.plist
+      properties:
+        CFBundleDisplayName: ScoutCam
+        NSLocalNetworkUsageDescription: "ScoutCam needs Local Network access to find and talk to your cameras."
+        NSMicrophoneUsageDescription: "ScoutCam uses the microphone for push-to-talk to the camera."
+        NSBonjourServices:
+          - _http._tcp
+        UILaunchScreen: {}
+        UIRequiresFullScreen: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+schemes:
+  ScoutCam:
+    build:
+      targets:
+        ScoutCam: all
+    run:
+      config: Debug
+    archive:
+      config: Release
