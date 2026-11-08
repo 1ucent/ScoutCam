@@ -34,6 +34,8 @@ targets:
         NSMicrophoneUsageDescription: "ScoutCam uses the microphone for push-to-talk to the camera."
         NSBonjourServices:
           - _http._tcp
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
